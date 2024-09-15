@@ -5,5 +5,9 @@
    fail: true
 
   tasks:
-   - fail: msg="Sorry, unless you tell me otherwise, this task will fail"
+   - fail: msg="Sorry, unless you tell me otherwise, this task will fails
+   ffgfgfdg \n
+   dgfd \n
+   gdfg \n
+   fgfgfdgfdfhgfkjlhgfgflkhjgflkhjghlkgjhlgkhjglfhkjgfhlkghg;lkhjgf;lhkjgh;gkjhg;khjg;dhlkgjh;glkhj;gdlkhjgd;hlkgm;gknbdgkngfbmgklfdbnfgjrgrlndfkbnksnrtkglgkt;gktgnf;klbnfkgngfbkgnk;gnhgkjbnrg;klmgfkl;gng;kgnfd;klgdfng;dfkngfd;lkgnfkgnfglkdfngf;lkgdnf;lsdgkng;dflksng;lksngkr;gnrkgnrt;gktnrkgfbndgjbnto;tnwkr"
      when: fail
