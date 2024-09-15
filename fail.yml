@@ -4,11 +4,5 @@
     fail: true
 
   tasks:
-    - fail: 
-        msg: | "failed: [localhost] (item=Create/Update Controller Organization PhilsFooFoo | Wait for finish the organization creation) => {'_organizations_job_async_results_item": {'__controller_organizations_item": {"default_environment": {"name": "Test for CaC Loading" 3.
-"galaxy_credentials":
-conto deter cottons ran angelo dot Au aiderd Co the 0 Pestle Fe ote 8: 10.103563535703652 2.12610 00er 3.
-"ansible_job_id": "j914096487252.125", "ansible_loop_var": '__organizations_job_async_results_item", 'attempts": 2, "changed": false, "finished": 1, "msg": "You don't have permission to POST to /api/controller/v2/organizations/ (HTTP 403).', 'results_file": */home/runner/.ansible_async/j914096487252.125*, "started": 1,
-"stderr_lines": [], "stdout": *".
-"stdout_lines": []}"
-      when: fail
+    - fail:
+        msg: "A paragraph is a self-contained unit of discourse in writing dealing with a particular point or idea. Though not required by the orthographic conventions of any language with a writing system, paragraphs are a conventional means of organizing extended segments of prose A paragraph is a self-contained unit of discourse in writing dealing with a particular point or idea. Though not required by the orthographic conventions of any language with a writing system, paragraphs are a conventional means of organizing extended segments of prose A paragraph is a self-contained unit of discourse in writing dealing with a particular point or idea. Though not required by the orthographic conventions of any language with a writing system, paragraphs are a conventional means of organizing extended segments of prose"
