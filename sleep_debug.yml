@@ -1,0 +1,13 @@
+- hosts: all
+  gather_facts: false
+  vars:
+    num_messages: 50
+  tasks:
+    - name: Sleep and debug in sequence
+      block:
+        - name: Sleep for 10 seconds
+          command: sleep 10
+        - name: Print debug message
+          debug:
+            msg: "This is a debug message: {{ item }}"
+      with_sequence: 'count={{ num_messages }}'
