@@ -1,0 +1,6 @@
+rules:
+  - name: An automatic remediation rule
+    condition: event.outage == true
+    action:
+      run_playbook:
+        name: remediate_outage.yml
