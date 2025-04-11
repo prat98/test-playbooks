@@ -1,0 +1,34 @@
+---
+- name: Hello World!
+  hosts: all
+  vars:
+    foo:
+      lolo: lele
+  tasks:
+    - name: Check SSH
+      shell: "echo Hello World"
+
+    - name: Hello World - 10!
+      debug:
+        msg: "Hello World!!! Server {{ ansible_hostname }} var foo={{ foo.lolo }}"
+      loop: "{{ range(1, 10) | list }}"
+
+    - name: Hello World - 50!
+      debug:
+        msg: "Hello World!!! Server {{ ansible_hostname }} var foo={{ foo.lolo }}"
+      loop: "{{ range(1, 50) | list }}"
+
+    - name: Hello World - 100!
+      debug:
+        msg: "Hello World!!! Server {{ ansible_hostname }} var foo={{ foo.lolo }}"
+      loop: "{{ range(1, 100) | list }}"
+
+    - name: Hello World - 200!
+      debug:
+        msg: "Hello World!!! Server {{ ansible_hostname }} var foo={{ foo.lolo }}"
+      loop: "{{ range(1, 200) | list }}"
+
+    - name: Hello World - 300!
+      debug:
+        msg: "Hello World!!! Server {{ ansible_hostname }} var foo={{ foo.lolo }}"
+      loop: "{{ range(1, 3000) | list }}"
