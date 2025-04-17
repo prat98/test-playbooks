@@ -2,18 +2,13 @@
 - name: "Test playbook to sleep for a specified period and then debug"
   hosts: all
   gather_facts: false
-  no_log: true  # Prevent logging for the entire play
   vars:
     num_messages: 50
     sleep_time: 30
   tasks:
-    - name: Pause before logging the first message
-      pause:
-        seconds: "{{ sleep_time }}"
-      no_log: true  # Explicitly prevent logging for this task
-
     - name: Sleep and debug in sequence
       debug:
         msg: "This is a debug message: {{ item }}"
       with_sequence: "count={{ num_messages }}"
-      no_log: false  # Ensure logging is enabled for debug messages
+      loop_control:
+        pause: "{{ sleep_time }}"
