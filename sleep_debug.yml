@@ -6,6 +6,9 @@
     num_messages: 50
     sleep_time: 30
   tasks:
+    - name: Pause before logging the first message
+      pause:
+        seconds: "{{ sleep_time }}"
     - name: Sleep and debug in sequence
       debug:
         msg: "This is a debug message: {{ item }}"
