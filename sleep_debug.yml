@@ -5,10 +5,11 @@
   vars:
     num_messages: 50
     sleep_time: 30
+    message_size: 100
   tasks:
     - name: Sleep and debug in sequence
       debug:
-        msg: "This is a debug message: {{ item }}"
+        msg: "This is a debug message: {{ '$' * message_size|int }}"
       with_sequence: "count={{ num_messages }}"
       loop_control:
         pause: "{{ sleep_time }}"
