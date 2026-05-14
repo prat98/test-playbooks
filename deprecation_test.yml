@@ -1,716 +1,248 @@
 ---
-# Comprehensive Deprecation Test Playbook for Ansible Core 2.16
-# This playbook demonstrates deprecation warnings that are captured by AWX/AAP
-# as structured events and displayed in the Deprecations Dashboard.
+# Deprecation Test Playbook for AWX/AAP
 #
-# Note: Not all [DEPRECATION WARNING] messages in stdout create "deprecated" events.
-# This playbook focuses on patterns that DO create structured events.
-# Target: 200+ deprecation messages
+# Uses a custom emit_deprecation module that calls AnsibleModule.deprecate()
+# directly. Each unique message creates a structured "deprecated" event captured
+# by AWX and visible in Administration → Deprecations Dashboard.
+#
+# Target: 200 deprecation events
 
-- name: Comprehensive Deprecation Test for Core 2.16
+- name: Deprecation Test - 200 Structured Events
   hosts: localhost
-  gather_facts: yes
+  gather_facts: no
   connection: local
+
+  vars:
+    deprecated_features:
+      # --- Category: Authentication & Access (20) ---
+      - { id: "AUTH-001",  name: "plaintext_password_param",      area: "auth" }
+      - { id: "AUTH-002",  name: "basic_auth_over_http",          area: "auth" }
+      - { id: "AUTH-003",  name: "static_api_key_in_vars",        area: "auth" }
+      - { id: "AUTH-004",  name: "shared_service_account",        area: "auth" }
+      - { id: "AUTH-005",  name: "password_in_inventory",         area: "auth" }
+      - { id: "AUTH-006",  name: "unencrypted_vault_file",        area: "auth" }
+      - { id: "AUTH-007",  name: "root_ssh_login_enabled",        area: "auth" }
+      - { id: "AUTH-008",  name: "legacy_ldap_bind_dn",           area: "auth" }
+      - { id: "AUTH-009",  name: "kerberos_des_encryption",       area: "auth" }
+      - { id: "AUTH-010",  name: "ntlmv1_authentication",         area: "auth" }
+      - { id: "AUTH-011",  name: "md5_password_hashing",          area: "auth" }
+      - { id: "AUTH-012",  name: "sha1_hmac_signing",             area: "auth" }
+      - { id: "AUTH-013",  name: "rc4_cipher_suite",              area: "auth" }
+      - { id: "AUTH-014",  name: "des_cipher_suite",              area: "auth" }
+      - { id: "AUTH-015",  name: "telnet_fallback",               area: "auth" }
+      - { id: "AUTH-016",  name: "ftp_credential_store",          area: "auth" }
+      - { id: "AUTH-017",  name: "rsh_remote_shell",              area: "auth" }
+      - { id: "AUTH-018",  name: "rlogin_remote_login",           area: "auth" }
+      - { id: "AUTH-019",  name: "finger_protocol_query",         area: "auth" }
+      - { id: "AUTH-020",  name: "talk_protocol_daemon",          area: "auth" }
+      # --- Category: Networking (20) ---
+      - { id: "NET-001",   name: "ipv4_only_stack",               area: "network" }
+      - { id: "NET-002",   name: "legacy_ifconfig_command",       area: "network" }
+      - { id: "NET-003",   name: "route_command_usage",           area: "network" }
+      - { id: "NET-004",   name: "netstat_command_usage",         area: "network" }
+      - { id: "NET-005",   name: "arp_command_usage",             area: "network" }
+      - { id: "NET-006",   name: "iwconfig_command_usage",        area: "network" }
+      - { id: "NET-007",   name: "ifdown_ifup_scripts",           area: "network" }
+      - { id: "NET-008",   name: "network_scripts_sysconfig",     area: "network" }
+      - { id: "NET-009",   name: "stp_portfast_global",           area: "network" }
+      - { id: "NET-010",   name: "vlan_dot1q_native_untagged",    area: "network" }
+      - { id: "NET-011",   name: "spanning_tree_uplink_fast",     area: "network" }
+      - { id: "NET-012",   name: "rip_v1_routing_protocol",       area: "network" }
+      - { id: "NET-013",   name: "igrp_routing_protocol",         area: "network" }
+      - { id: "NET-014",   name: "classful_routing",              area: "network" }
+      - { id: "NET-015",   name: "wep_wifi_security",             area: "network" }
+      - { id: "NET-016",   name: "tkip_wifi_encryption",          area: "network" }
+      - { id: "NET-017",   name: "snmp_v1_community_string",      area: "network" }
+      - { id: "NET-018",   name: "snmp_v2c_community_string",     area: "network" }
+      - { id: "NET-019",   name: "tftp_configuration_backup",     area: "network" }
+      - { id: "NET-020",   name: "finger_daemon_network",         area: "network" }
+      # --- Category: Storage (20) ---
+      - { id: "STR-001",   name: "ext2_filesystem_format",        area: "storage" }
+      - { id: "STR-002",   name: "reiserfs_filesystem",           area: "storage" }
+      - { id: "STR-003",   name: "jfs_filesystem",                area: "storage" }
+      - { id: "STR-004",   name: "fat16_filesystem",              area: "storage" }
+      - { id: "STR-005",   name: "nfs_v2_protocol",               area: "storage" }
+      - { id: "STR-006",   name: "aio_disk_scheduler",            area: "storage" }
+      - { id: "STR-007",   name: "deadline_disk_scheduler",       area: "storage" }
+      - { id: "STR-008",   name: "cfq_disk_scheduler",            area: "storage" }
+      - { id: "STR-009",   name: "raid0_no_redundancy",           area: "storage" }
+      - { id: "STR-010",   name: "mdadm_legacy_config",           area: "storage" }
+      - { id: "STR-011",   name: "lvm_thin_provisioning_v1",      area: "storage" }
+      - { id: "STR-012",   name: "hdparm_tuning_method",          area: "storage" }
+      - { id: "STR-013",   name: "fdisk_mbr_partitioning",        area: "storage" }
+      - { id: "STR-014",   name: "sfdisk_script_format",          area: "storage" }
+      - { id: "STR-015",   name: "cfdisk_interactive_mode",       area: "storage" }
+      - { id: "STR-016",   name: "e2fsck_manual_repair",          area: "storage" }
+      - { id: "STR-017",   name: "tune2fs_reserved_blocks",       area: "storage" }
+      - { id: "STR-018",   name: "debugfs_direct_edit",           area: "storage" }
+      - { id: "STR-019",   name: "losetup_manual_loop",           area: "storage" }
+      - { id: "STR-020",   name: "swap_file_fstab_noauto",        area: "storage" }
+      # --- Category: Package Management (20) ---
+      - { id: "PKG-001",   name: "yum_v3_python_api",             area: "package" }
+      - { id: "PKG-002",   name: "up2date_rhn_client",            area: "package" }
+      - { id: "PKG-003",   name: "apt_get_dselect_upgrade",       area: "package" }
+      - { id: "PKG-004",   name: "dpkg_reconfigure_all",          area: "package" }
+      - { id: "PKG-005",   name: "rpm_nodeps_force_install",      area: "package" }
+      - { id: "PKG-006",   name: "pip_install_as_root",           area: "package" }
+      - { id: "PKG-007",   name: "easy_install_setuptools",       area: "package" }
+      - { id: "PKG-008",   name: "gem_system_wide_install",       area: "package" }
+      - { id: "PKG-009",   name: "cpan_global_install",           area: "package" }
+      - { id: "PKG-010",   name: "pecl_global_install",           area: "package" }
+      - { id: "PKG-011",   name: "pear_global_install",           area: "package" }
+      - { id: "PKG-012",   name: "emerge_sync_legacy",            area: "package" }
+      - { id: "PKG-013",   name: "portage_unmask_all",            area: "package" }
+      - { id: "PKG-014",   name: "zypper_lock_global",            area: "package" }
+      - { id: "PKG-015",   name: "pkgng_legacy_format",           area: "package" }
+      - { id: "PKG-016",   name: "pkgadd_admin_nocheck",          area: "package" }
+      - { id: "PKG-017",   name: "swinstall_legacy_hp",           area: "package" }
+      - { id: "PKG-018",   name: "installp_legacy_aix",           area: "package" }
+      - { id: "PKG-019",   name: "setup_exe_silent_flags",        area: "package" }
+      - { id: "PKG-020",   name: "msi_quiet_install_flags",       area: "package" }
+      # --- Category: Init / Service Management (20) ---
+      - { id: "SVC-001",   name: "sysvinit_rc_scripts",           area: "service" }
+      - { id: "SVC-002",   name: "upstart_conf_jobs",             area: "service" }
+      - { id: "SVC-003",   name: "initd_runlevel_symlinks",       area: "service" }
+      - { id: "SVC-004",   name: "chkconfig_legacy_tool",         area: "service" }
+      - { id: "SVC-005",   name: "service_command_wrapper",       area: "service" }
+      - { id: "SVC-006",   name: "update_rc_d_command",           area: "service" }
+      - { id: "SVC-007",   name: "invoke_rc_d_command",           area: "service" }
+      - { id: "SVC-008",   name: "start_stop_daemon_legacy",      area: "service" }
+      - { id: "SVC-009",   name: "launchctl_legacy_plist",        area: "service" }
+      - { id: "SVC-010",   name: "smf_svccfg_legacy",             area: "service" }
+      - { id: "SVC-011",   name: "rc_conf_bsd_service",           area: "service" }
+      - { id: "SVC-012",   name: "openrc_legacy_runscript",       area: "service" }
+      - { id: "SVC-013",   name: "runit_legacy_sv_tool",          area: "service" }
+      - { id: "SVC-014",   name: "s6_legacy_init",                area: "service" }
+      - { id: "SVC-015",   name: "daemontools_supervise",         area: "service" }
+      - { id: "SVC-016",   name: "monit_legacy_config",           area: "service" }
+      - { id: "SVC-017",   name: "supervisord_legacy_ini",        area: "service" }
+      - { id: "SVC-018",   name: "circus_legacy_watcher",         area: "service" }
+      - { id: "SVC-019",   name: "god_legacy_monitor",            area: "service" }
+      - { id: "SVC-020",   name: "bluepill_legacy_monitor",       area: "service" }
+      # --- Category: Logging (20) ---
+      - { id: "LOG-001",   name: "syslog_udp_514_unencrypted",    area: "logging" }
+      - { id: "LOG-002",   name: "klogd_legacy_daemon",           area: "logging" }
+      - { id: "LOG-003",   name: "syslogd_legacy_daemon",         area: "logging" }
+      - { id: "LOG-004",   name: "metalog_legacy_config",         area: "logging" }
+      - { id: "LOG-005",   name: "msyslog_legacy_windows",        area: "logging" }
+      - { id: "LOG-006",   name: "nxlog_v2_config_format",        area: "logging" }
+      - { id: "LOG-007",   name: "logrotate_compress_gzip_only",  area: "logging" }
+      - { id: "LOG-008",   name: "newsyslog_bsd_legacy",          area: "logging" }
+      - { id: "LOG-009",   name: "logcheck_legacy_ruleset",       area: "logging" }
+      - { id: "LOG-010",   name: "sec_simple_event_correlator",   area: "logging" }
+      - { id: "LOG-011",   name: "splunk_tcp_legacy_input",       area: "logging" }
+      - { id: "LOG-012",   name: "fluentd_v0_config_format",      area: "logging" }
+      - { id: "LOG-013",   name: "logstash_v1_config_format",     area: "logging" }
+      - { id: "LOG-014",   name: "graylog_v1_api",                area: "logging" }
+      - { id: "LOG-015",   name: "kibana_v4_dashboard_format",    area: "logging" }
+      - { id: "LOG-016",   name: "elasticsearch_v1_api",          area: "logging" }
+      - { id: "LOG-017",   name: "filebeat_v1_config",            area: "logging" }
+      - { id: "LOG-018",   name: "metricbeat_v1_config",          area: "logging" }
+      - { id: "LOG-019",   name: "journald_forward_to_syslog",    area: "logging" }
+      - { id: "LOG-020",   name: "auditd_legacy_rules_format",    area: "logging" }
+      # --- Category: Security (20) ---
+      - { id: "SEC-001",   name: "selinux_permissive_global",     area: "security" }
+      - { id: "SEC-002",   name: "apparmor_complain_global",      area: "security" }
+      - { id: "SEC-003",   name: "iptables_legacy_chains",        area: "security" }
+      - { id: "SEC-004",   name: "ipchains_legacy_firewall",      area: "security" }
+      - { id: "SEC-005",   name: "ipfwadm_legacy_firewall",       area: "security" }
+      - { id: "SEC-006",   name: "tcp_wrappers_hosts_allow",      area: "security" }
+      - { id: "SEC-007",   name: "pam_tally_module",              area: "security" }
+      - { id: "SEC-008",   name: "pam_tally2_module",             area: "security" }
+      - { id: "SEC-009",   name: "pam_cracklib_module",           area: "security" }
+      - { id: "SEC-010",   name: "xinetd_superserver",            area: "security" }
+      - { id: "SEC-011",   name: "inetd_superserver",             area: "security" }
+      - { id: "SEC-012",   name: "portmap_rpc_binder",            area: "security" }
+      - { id: "SEC-013",   name: "rpcbind_v2_protocol",           area: "security" }
+      - { id: "SEC-014",   name: "nfs_sec_sys_auth",              area: "security" }
+      - { id: "SEC-015",   name: "yescrypt_legacy_rounds",        area: "security" }
+      - { id: "SEC-016",   name: "des_crypt_password",            area: "security" }
+      - { id: "SEC-017",   name: "md5_crypt_password",            area: "security" }
+      - { id: "SEC-018",   name: "blowfish_crypt_bsd",            area: "security" }
+      - { id: "SEC-019",   name: "bigcrypt_password_hp",          area: "security" }
+      - { id: "SEC-020",   name: "bsdicrypt_password_bsd",        area: "security" }
+      # --- Category: Containers & Orchestration (20) ---
+      - { id: "CON-001",   name: "docker_v18_api",                area: "container" }
+      - { id: "CON-002",   name: "docker_compose_v1_cli",         area: "container" }
+      - { id: "CON-003",   name: "docker_swarm_classic",          area: "container" }
+      - { id: "CON-004",   name: "kubernetes_v1_16_api",          area: "container" }
+      - { id: "CON-005",   name: "kubernetes_extensions_v1beta1", area: "container" }
+      - { id: "CON-006",   name: "kubernetes_apps_v1beta1",       area: "container" }
+      - { id: "CON-007",   name: "helm_v2_tiller",                area: "container" }
+      - { id: "CON-008",   name: "openshift_v3_api",              area: "container" }
+      - { id: "CON-009",   name: "podman_v1_cli_flags",           area: "container" }
+      - { id: "CON-010",   name: "lxc_legacy_config_format",      area: "container" }
+      - { id: "CON-011",   name: "lxd_legacy_profile_syntax",     area: "container" }
+      - { id: "CON-012",   name: "rkt_container_runtime",         area: "container" }
+      - { id: "CON-013",   name: "mesos_legacy_framework_api",    area: "container" }
+      - { id: "CON-014",   name: "marathon_legacy_rest_api",      area: "container" }
+      - { id: "CON-015",   name: "nomad_v0_9_job_spec",           area: "container" }
+      - { id: "CON-016",   name: "containerd_v1_config",          area: "container" }
+      - { id: "CON-017",   name: "crio_v1_15_config",             area: "container" }
+      - { id: "CON-018",   name: "buildah_v1_legacy_flags",       area: "container" }
+      - { id: "CON-019",   name: "skopeo_v0_legacy_flags",        area: "container" }
+      - { id: "CON-020",   name: "kaniko_v0_legacy_args",         area: "container" }
+      # --- Category: Cloud (20) ---
+      - { id: "CLD-001",   name: "aws_ec2_classic_networking",    area: "cloud" }
+      - { id: "CLD-002",   name: "aws_s3_acl_grants",             area: "cloud" }
+      - { id: "CLD-003",   name: "aws_metadata_imdsv1",           area: "cloud" }
+      - { id: "CLD-004",   name: "aws_cloudformation_v1_syntax",  area: "cloud" }
+      - { id: "CLD-005",   name: "azure_classic_portal_api",      area: "cloud" }
+      - { id: "CLD-006",   name: "azure_asm_management_api",      area: "cloud" }
+      - { id: "CLD-007",   name: "gcp_compute_v1beta_api",        area: "cloud" }
+      - { id: "CLD-008",   name: "gcp_legacy_service_account_key",area: "cloud" }
+      - { id: "CLD-009",   name: "openstack_v2_identity_api",     area: "cloud" }
+      - { id: "CLD-010",   name: "openstack_nova_v2_api",         area: "cloud" }
+      - { id: "CLD-011",   name: "vmware_vsphere_5_api",          area: "cloud" }
+      - { id: "CLD-012",   name: "vmware_tools_v9_api",           area: "cloud" }
+      - { id: "CLD-013",   name: "digitalocean_v1_api",           area: "cloud" }
+      - { id: "CLD-014",   name: "linode_v3_api",                 area: "cloud" }
+      - { id: "CLD-015",   name: "hetzner_v1_api",                area: "cloud" }
+      - { id: "CLD-016",   name: "vultr_v1_api",                  area: "cloud" }
+      - { id: "CLD-017",   name: "cloudstack_legacy_api_key",     area: "cloud" }
+      - { id: "CLD-018",   name: "rackspace_nova_client",         area: "cloud" }
+      - { id: "CLD-019",   name: "ovh_soap_api",                  area: "cloud" }
+      - { id: "CLD-020",   name: "ionos_v5_api",                  area: "cloud" }
+      # --- Category: Monitoring (20) ---
+      - { id: "MON-001",   name: "nagios_v3_config_format",       area: "monitoring" }
+      - { id: "MON-002",   name: "icinga_v1_classic_api",         area: "monitoring" }
+      - { id: "MON-003",   name: "zabbix_v4_api",                 area: "monitoring" }
+      - { id: "MON-004",   name: "zabbix_v3_trigger_syntax",      area: "monitoring" }
+      - { id: "MON-005",   name: "sensu_v1_check_config",         area: "monitoring" }
+      - { id: "MON-006",   name: "sensugo_v5_api",                area: "monitoring" }
+      - { id: "MON-007",   name: "collectd_v4_config",            area: "monitoring" }
+      - { id: "MON-008",   name: "ganglia_v3_gmond",              area: "monitoring" }
+      - { id: "MON-009",   name: "munin_node_legacy",             area: "monitoring" }
+      - { id: "MON-010",   name: "cacti_legacy_spine",            area: "monitoring" }
+      - { id: "MON-011",   name: "prtg_soap_api",                 area: "monitoring" }
+      - { id: "MON-012",   name: "opentsdb_v1_http_api",          area: "monitoring" }
+      - { id: "MON-013",   name: "graphite_plaintext_protocol",   area: "monitoring" }
+      - { id: "MON-014",   name: "influxdb_v1_line_protocol",     area: "monitoring" }
+      - { id: "MON-015",   name: "prometheus_v1_query_api",       area: "monitoring" }
+      - { id: "MON-016",   name: "datadog_v1_api",                area: "monitoring" }
+      - { id: "MON-017",   name: "newrelic_v1_agent",             area: "monitoring" }
+      - { id: "MON-018",   name: "dynatrace_v1_api",              area: "monitoring" }
+      - { id: "MON-019",   name: "appdynamics_v4_agent",          area: "monitoring" }
+      - { id: "MON-020",   name: "instana_v1_api",                area: "monitoring" }
 
   tasks:
     - name: Display Ansible version
       debug:
-        msg: "Running Ansible {{ ansible_version.full }}"
-
-    # =========================================================================
-    # CATEGORY 1: Bare String Variables in Conditionals (Individual Tasks)
-    # These trigger "Conditional result was of type 'AnsibleUnsafeText'" warnings
-    # Scheduled for removal in Ansible 2.19
-    # =========================================================================
-
-    - name: Bare conditional - ansible_distribution
-      debug:
-        msg: "Distribution: {{ ansible_distribution }}"
-      when: ansible_distribution
-
-    - name: Bare conditional - ansible_os_family
-      debug:
-        msg: "OS Family: {{ ansible_os_family }}"
-      when: ansible_os_family
-
-    - name: Bare conditional - ansible_hostname
-      debug:
-        msg: "Hostname: {{ ansible_hostname }}"
-      when: ansible_hostname
-
-    - name: Bare conditional - ansible_user_id
-      debug:
-        msg: "User: {{ ansible_user_id }}"
-      when: ansible_user_id
-
-    - name: Bare conditional - ansible_architecture
-      debug:
-        msg: "Architecture: {{ ansible_architecture }}"
-      when: ansible_architecture
-
-    - name: Bare conditional - ansible_python_version
-      debug:
-        msg: "Python: {{ ansible_python_version }}"
-      when: ansible_python_version
-
-    - name: Bare conditional - ansible_system
-      debug:
-        msg: "System: {{ ansible_system }}"
-      when: ansible_system
-
-    - name: Bare conditional - ansible_kernel
-      debug:
-        msg: "Kernel: {{ ansible_kernel }}"
-      when: ansible_kernel
-
-    - name: Bare conditional - ansible_machine
-      debug:
-        msg: "Machine: {{ ansible_machine }}"
-      when: ansible_machine
-
-    - name: Bare conditional - ansible_env.HOME
-      debug:
-        msg: "Home: {{ ansible_env.HOME }}"
-      when: ansible_env.HOME
-
-    - name: Bare conditional - ansible_date_time.date
-      debug:
-        msg: "Date: {{ ansible_date_time.date }}"
-      when: ansible_date_time.date
-
-    - name: Bare conditional - ansible_product_name
-      debug:
-        msg: "Product: {{ ansible_product_name }}"
-      when: ansible_product_name
-
-    - name: Bare conditional - ansible_fqdn
-      debug:
-        msg: "FQDN: {{ ansible_fqdn }}"
-      when: ansible_fqdn
-
-    - name: Bare conditional - ansible_nodename
-      debug:
-        msg: "Node: {{ ansible_nodename }}"
-      when: ansible_nodename
-
-    - name: Bare conditional - ansible_domain
-      debug:
-        msg: "Domain: {{ ansible_domain }}"
-      when: ansible_domain
-
-    - name: Bare conditional - ansible_env.USER
-      debug:
-        msg: "User dir exists"
-      when: ansible_env.USER
-
-    - name: Bare conditional - ansible_kernel_version
-      debug:
-        msg: "Kernel version: {{ ansible_kernel_version }}"
-      when: ansible_kernel_version
-
-    - name: Bare conditional - ansible_distribution_version
-      debug:
-        msg: "Distro version: {{ ansible_distribution_version }}"
-      when: ansible_distribution_version
-
-    - name: Bare conditional - ansible_distribution_release
-      debug:
-        msg: "Distro release: {{ ansible_distribution_release }}"
-      when: ansible_distribution_release
-
-    - name: Bare conditional - ansible_distribution_major_version
-      debug:
-        msg: "Major version: {{ ansible_distribution_major_version }}"
-      when: ansible_distribution_major_version
-
-    - name: Bare conditional - ansible_processor_count
-      debug:
-        msg: "Processor count: {{ ansible_processor_count }}"
-      when: ansible_processor_count
-
-    - name: Bare conditional - ansible_memtotal_mb
-      debug:
-        msg: "Total memory: {{ ansible_memtotal_mb }} MB"
-      when: ansible_memtotal_mb
-
-    - name: Bare conditional - ansible_swaptotal_mb
-      debug:
-        msg: "Swap total: {{ ansible_swaptotal_mb }} MB"
-      when: ansible_swaptotal_mb
-
-    - name: Bare conditional - ansible_virtualization_type
-      debug:
-        msg: "Virt type: {{ ansible_virtualization_type }}"
-      when: ansible_virtualization_type
-
-    - name: Bare conditional - ansible_virtualization_role
-      debug:
-        msg: "Virt role: {{ ansible_virtualization_role }}"
-      when: ansible_virtualization_role
-
-    - name: Bare conditional - ansible_pkg_mgr
-      debug:
-        msg: "Package manager: {{ ansible_pkg_mgr }}"
-      when: ansible_pkg_mgr
-
-    - name: Bare conditional - ansible_service_mgr
-      debug:
-        msg: "Service manager: {{ ansible_service_mgr }}"
-      when: ansible_service_mgr
-
-    - name: Bare conditional - ansible_python.executable
-      debug:
-        msg: "Python exe: {{ ansible_python.executable }}"
-      when: ansible_python.executable
-
-    - name: Bare conditional - ansible_date_time.time
-      debug:
-        msg: "Time: {{ ansible_date_time.time }}"
-      when: ansible_date_time.time
-
-    - name: Bare conditional - ansible_date_time.year
-      debug:
-        msg: "Year: {{ ansible_date_time.year }}"
-      when: ansible_date_time.year
-
-    - name: Bare conditional - ansible_date_time.weekday
-      debug:
-        msg: "Weekday: {{ ansible_date_time.weekday }}"
-      when: ansible_date_time.weekday
-
-    - name: Bare conditional - ansible_date_time.tz
-      debug:
-        msg: "Timezone: {{ ansible_date_time.tz }}"
-      when: ansible_date_time.tz
-
-    - name: Bare conditional - ansible_user_shell
-      debug:
-        msg: "User shell: {{ ansible_user_shell }}"
-      when: ansible_user_shell
-
-    - name: Bare conditional - ansible_user_gecos
-      debug:
-        msg: "User gecos: {{ ansible_user_gecos }}"
-      when: ansible_user_gecos
-
-    - name: Bare conditional - ansible_real_user_id
-      debug:
-        msg: "Real UID: {{ ansible_real_user_id }}"
-      when: ansible_real_user_id
-
-    - name: Bare conditional - ansible_effective_user_id
-      debug:
-        msg: "Effective UID: {{ ansible_effective_user_id }}"
-      when: ansible_effective_user_id
-
-    - name: Bare conditional - ansible_real_group_id
-      debug:
-        msg: "Real GID: {{ ansible_real_group_id }}"
-      when: ansible_real_group_id
-
-    - name: Bare conditional - ansible_effective_group_id
-      debug:
-        msg: "Effective GID: {{ ansible_effective_group_id }}"
-      when: ansible_effective_group_id
-
-    - name: Bare conditional - ansible_selinux.status
-      debug:
-        msg: "SELinux: {{ ansible_selinux.status }}"
-      when: ansible_selinux.status
-
-    - name: Bare conditional - ansible_apparmor.status
-      debug:
-        msg: "AppArmor: {{ ansible_apparmor.status }}"
-      when: ansible_apparmor.status
-
-    # =========================================================================
-    # CATEGORY 2: Multiple bare conditionals in single task
-    # Each 'and'/'or' clause independently triggers the deprecation
-    # =========================================================================
-
-    - name: Multiple bare variables - distribution check
-      debug:
-        msg: "Multi-check passed"
-      when: ansible_distribution and ansible_os_family
-
-    - name: Multiple bare variables - system check
-      debug:
-        msg: "System check passed"
-      when: ansible_system and ansible_kernel
-
-    - name: Multiple bare variables - user check
-      debug:
-        msg: "User check passed"
-      when: ansible_user_id and ansible_user_shell
-
-    - name: Multiple bare variables - architecture check
-      debug:
-        msg: "Arch check passed"
-      when: ansible_architecture and ansible_machine
-
-    - name: Multiple bare variables - version check
-      debug:
-        msg: "Version check passed"
-      when: ansible_distribution_version and ansible_distribution_major_version
-
-    - name: Multiple bare variables - hostname check
-      debug:
-        msg: "Hostname check passed"
-      when: ansible_hostname and ansible_fqdn
-
-    - name: Multiple bare variables - memory check
-      debug:
-        msg: "Memory check passed"
-      when: ansible_memtotal_mb and ansible_swaptotal_mb
-
-    - name: Multiple bare variables - virt check
-      debug:
-        msg: "Virt check passed"
-      when: ansible_virtualization_type and ansible_virtualization_role
-
-    - name: Multiple bare variables - service check
-      debug:
-        msg: "Service check passed"
-      when: ansible_service_mgr and ansible_pkg_mgr
-
-    - name: Multiple bare variables - python check
-      debug:
-        msg: "Python check passed"
-      when: ansible_python_version and ansible_python.executable
-
-    - name: Multiple bare variables - datetime check
-      debug:
-        msg: "Datetime check passed"
-      when: ansible_date_time.date and ansible_date_time.time
-
-    - name: Multiple bare variables - kernel check
-      debug:
-        msg: "Kernel check passed"
-      when: ansible_kernel and ansible_kernel_version
-
-    # =========================================================================
-    # CATEGORY 3: Bare conditionals with register
-    # =========================================================================
-
-    - name: Register a variable
-      command: echo "test"
-      register: test_output
-      changed_when: false
-
-    - name: Bare conditional on registered variable stdout
-      debug:
-        msg: "Output exists"
-      when: test_output.stdout
-
-    - name: Register another variable
-      command: hostname
-      register: hostname_output
-      changed_when: false
-
-    - name: Bare conditional on registered hostname
-      debug:
-        msg: "Hostname output: {{ hostname_output.stdout }}"
-      when: hostname_output.stdout
-
-    - name: Register uname output
-      command: uname -r
-      register: uname_output
-      changed_when: false
-
-    - name: Bare conditional on registered uname
-      debug:
-        msg: "Kernel: {{ uname_output.stdout }}"
-      when: uname_output.stdout
-
-    - name: Register whoami output
-      command: whoami
-      register: whoami_output
-      changed_when: false
-
-    - name: Bare conditional on registered whoami
-      debug:
-        msg: "User: {{ whoami_output.stdout }}"
-      when: whoami_output.stdout
-
-    # =========================================================================
-    # CATEGORY 4: Loop-based deprecations - Batch A (30 iterations)
-    # Each loop iteration independently triggers the bare-variable deprecation
-    # =========================================================================
-
-    - name: Bare conditional in loop - batch A (30 deprecations)
-      debug:
-        msg: "Processing batch A item: {{ item }}"
-      when: item
-      loop:
-        - alpha
-        - bravo
-        - charlie
-        - delta
-        - echo
-        - foxtrot
-        - golf
-        - hotel
-        - india
-        - juliet
-        - kilo
-        - lima
-        - mike
-        - november
-        - oscar
-        - papa
-        - quebec
-        - romeo
-        - sierra
-        - tango
-        - uniform
-        - victor
-        - whiskey
-        - xray
-        - yankee
-        - zulu
-        - apple
-        - banana
-        - cherry
-        - date
-
-    # =========================================================================
-    # CATEGORY 5: Loop-based deprecations - Batch B (30 iterations)
-    # =========================================================================
-
-    - name: Bare conditional in loop - batch B (30 deprecations)
-      debug:
-        msg: "Processing batch B item: {{ item }}"
-      when: item
-      loop:
-        - service_nginx
-        - service_httpd
-        - service_sshd
-        - service_firewalld
-        - service_chronyd
-        - service_rsyslog
-        - service_crond
-        - service_auditd
-        - service_tuned
-        - service_postfix
-        - service_NetworkManager
-        - service_dbus
-        - service_systemd
-        - service_polkit
-        - service_udev
-        - service_kernel
-        - service_containerd
-        - service_docker
-        - service_podman
-        - service_kubelet
-        - service_etcd
-        - service_apiserver
-        - service_controller
-        - service_scheduler
-        - service_proxy
-        - service_dns
-        - service_dhcp
-        - service_nfs
-        - service_smb
-        - service_ldap
-
-    # =========================================================================
-    # CATEGORY 6: Loop-based deprecations - Batch C (30 iterations)
-    # =========================================================================
-
-    - name: Bare conditional in loop - batch C (30 deprecations)
-      debug:
-        msg: "Processing batch C item: {{ item }}"
-      when: item
-      loop:
-        - config_network
-        - config_storage
-        - config_security
-        - config_logging
-        - config_monitoring
-        - config_backup
-        - config_cron
-        - config_users
-        - config_groups
-        - config_sudoers
-        - config_ssh
-        - config_ssl
-        - config_firewall
-        - config_selinux
-        - config_apparmor
-        - config_audit
-        - config_limits
-        - config_sysctl
-        - config_grub
-        - config_timezone
-        - config_locale
-        - config_keyboard
-        - config_hostname
-        - config_dns
-        - config_ntp
-        - config_proxy
-        - config_yum
-        - config_apt
-        - config_pip
-        - config_gem
-
-    # =========================================================================
-    # CATEGORY 7: Loop-based deprecations - Batch D (30 iterations)
-    # =========================================================================
-
-    - name: Bare conditional in loop - batch D (30 deprecations)
-      debug:
-        msg: "Processing batch D item: {{ item }}"
-      when: item
-      loop:
-        - host_web01
-        - host_web02
-        - host_web03
-        - host_web04
-        - host_web05
-        - host_db01
-        - host_db02
-        - host_db03
-        - host_db04
-        - host_db05
-        - host_app01
-        - host_app02
-        - host_app03
-        - host_app04
-        - host_app05
-        - host_cache01
-        - host_cache02
-        - host_cache03
-        - host_lb01
-        - host_lb02
-        - host_mon01
-        - host_mon02
-        - host_log01
-        - host_log02
-        - host_bkp01
-        - host_bkp02
-        - host_dev01
-        - host_dev02
-        - host_stg01
-        - host_stg02
-
-    # =========================================================================
-    # CATEGORY 8: Loop-based deprecations - Batch E (30 iterations)
-    # =========================================================================
-
-    - name: Bare conditional in loop - batch E (30 deprecations)
-      debug:
-        msg: "Processing batch E item: {{ item }}"
-      when: item
-      loop:
-        - pkg_ansible
-        - pkg_python3
-        - pkg_pip3
-        - pkg_git
-        - pkg_curl
-        - pkg_wget
-        - pkg_vim
-        - pkg_nano
-        - pkg_tmux
-        - pkg_screen
-        - pkg_htop
-        - pkg_top
-        - pkg_netstat
-        - pkg_ss
-        - pkg_tcpdump
-        - pkg_nmap
-        - pkg_rsync
-        - pkg_scp
-        - pkg_sftp
-        - pkg_tar
-        - pkg_gzip
-        - pkg_bzip2
-        - pkg_zip
-        - pkg_unzip
-        - pkg_make
-        - pkg_gcc
-        - pkg_g++
-        - pkg_cmake
-        - pkg_autoconf
-        - pkg_automake
-
-    # =========================================================================
-    # CATEGORY 9: Loop-based deprecations - Batch F (30 iterations)
-    # =========================================================================
-
-    - name: Bare conditional in loop - batch F (30 deprecations)
-      debug:
-        msg: "Processing batch F item: {{ item }}"
-      when: item
-      loop:
-        - env_production
-        - env_staging
-        - env_development
-        - env_testing
-        - env_qa
-        - env_uat
-        - env_dr
-        - env_backup
-        - region_us_east_1
-        - region_us_west_2
-        - region_eu_west_1
-        - region_eu_central_1
-        - region_ap_south_1
-        - region_ap_northeast_1
-        - region_ap_southeast_1
-        - region_ca_central_1
-        - region_sa_east_1
-        - region_af_south_1
-        - region_me_south_1
-        - zone_a
-        - zone_b
-        - zone_c
-        - cluster_prod
-        - cluster_dev
-        - cluster_staging
-        - namespace_default
-        - namespace_kube_system
-        - namespace_monitoring
-        - namespace_logging
-        - namespace_ingress
-
-    # =========================================================================
-    # CATEGORY 10: Nested ansible facts in bare conditionals
-    # =========================================================================
-
-    - name: Bare conditional - ansible_default_ipv4.address
-      debug:
-        msg: "Default IPv4: {{ ansible_default_ipv4.address | default('N/A') }}"
-      when: ansible_default_ipv4.address is defined
-
-    - name: Bare conditional - ansible_default_ipv6.address
-      debug:
-        msg: "Default IPv6: {{ ansible_default_ipv6.address | default('N/A') }}"
-      when: ansible_default_ipv6.address is defined
-
-    - name: Bare conditional - ansible_memfree_mb
-      debug:
-        msg: "Free memory: {{ ansible_memfree_mb }} MB"
-      when: ansible_memfree_mb
-
-    - name: Bare conditional - ansible_swapfree_mb
-      debug:
-        msg: "Swap free: {{ ansible_swapfree_mb }} MB"
-      when: ansible_swapfree_mb
-
-    - name: Bare conditional - ansible_processor_vcpus
-      debug:
-        msg: "vCPUs: {{ ansible_processor_vcpus }}"
-      when: ansible_processor_vcpus
-
-    - name: Bare conditional - ansible_processor_cores
-      debug:
-        msg: "Cores: {{ ansible_processor_cores }}"
-      when: ansible_processor_cores
-
-    - name: Bare conditional - ansible_processor_threads_per_core
-      debug:
-        msg: "Threads/core: {{ ansible_processor_threads_per_core }}"
-      when: ansible_processor_threads_per_core
-
-    - name: Bare conditional - ansible_product_uuid
-      debug:
-        msg: "Product UUID: {{ ansible_product_uuid | default('N/A') }}"
-      when: ansible_product_uuid is defined
-
-    - name: Bare conditional - ansible_bios_version
-      debug:
-        msg: "BIOS version: {{ ansible_bios_version | default('N/A') }}"
-      when: ansible_bios_version is defined
-
-    - name: Bare conditional - ansible_system_vendor
-      debug:
-        msg: "System vendor: {{ ansible_system_vendor | default('N/A') }}"
-      when: ansible_system_vendor is defined
-
-    - name: Bare conditional - ansible_form_factor
-      debug:
-        msg: "Form factor: {{ ansible_form_factor | default('N/A') }}"
-      when: ansible_form_factor is defined
-
-    - name: Bare conditional - ansible_chassis
-      debug:
-        msg: "Chassis: {{ ansible_chassis | default('N/A') }}"
-      when: ansible_chassis is defined
-
-    # =========================================================================
-    # CATEGORY 11: set_fact with bare variable comparisons
-    # =========================================================================
-
-    - name: Set fact from bare variable
-      set_fact:
-        my_distro: "{{ ansible_distribution }}"
-        my_version: "{{ ansible_distribution_version }}"
-        my_arch: "{{ ansible_architecture }}"
-        my_kernel: "{{ ansible_kernel }}"
-        my_hostname: "{{ ansible_hostname }}"
-
-    - name: Bare conditional on set_fact - distro
-      debug:
-        msg: "My distro: {{ my_distro }}"
-      when: my_distro
-
-    - name: Bare conditional on set_fact - version
-      debug:
-        msg: "My version: {{ my_version }}"
-      when: my_version
-
-    - name: Bare conditional on set_fact - arch
-      debug:
-        msg: "My arch: {{ my_arch }}"
-      when: my_arch
-
-    - name: Bare conditional on set_fact - kernel
-      debug:
-        msg: "My kernel: {{ my_kernel }}"
-      when: my_kernel
-
-    - name: Bare conditional on set_fact - hostname
-      debug:
-        msg: "My hostname: {{ my_hostname }}"
-      when: my_hostname
-
-    # =========================================================================
-    # CATEGORY 12: Additional bare conditionals on common vars
-    # =========================================================================
-
-    - name: Bare conditional - inventory_hostname
-      debug:
-        msg: "Inventory hostname: {{ inventory_hostname }}"
-      when: inventory_hostname
-
-    - name: Bare conditional - inventory_hostname_short
-      debug:
-        msg: "Short hostname: {{ inventory_hostname_short }}"
-      when: inventory_hostname_short
-
-    - name: Bare conditional - ansible_play_name
-      debug:
-        msg: "Play name: {{ ansible_play_name }}"
-      when: ansible_play_name
-
-    - name: Bare conditional - playbook_dir
-      debug:
-        msg: "Playbook dir: {{ playbook_dir }}"
-      when: playbook_dir
-
-    - name: Bare conditional - role_path
-      debug:
-        msg: "Role path: {{ role_path | default('not in role') }}"
-      when: role_path is defined
+        msg: "Running Ansible {{ ansible_version.full }} — emitting 200 structured deprecation events"
+
+    - name: "Emit deprecation [{{ item.id }}] {{ item.name }} ({{ item.area }})"
+      emit_deprecation:
+        message: >-
+          [{{ item.area | upper }}] {{ item.id }}: '{{ item.name }}' is deprecated
+          and will be removed in Ansible {{ '2.19' }}.
+          Migrate to a supported alternative before upgrading.
+        version: "2.19"
+      loop: "{{ deprecated_features }}"
+      loop_control:
+        label: "{{ item.id }} {{ item.name }}"
 
     - name: Final summary
       debug:
         msg: |
-          Deprecation test complete!
-          This playbook generates 200+ 'deprecated' events from:
-          - 40+ individual bare conditional tasks
-          - 12 bare multi-conditional tasks
-          - 4 bare conditional tasks on registered variables
-          - 6 loops x 30 iterations = 180 loop-based deprecations
-          - 15+ additional fact/set_fact bare conditionals
+          Deprecation test complete — {{ deprecated_features | length }} events emitted.
           Check Administration → Deprecations to view the results.
